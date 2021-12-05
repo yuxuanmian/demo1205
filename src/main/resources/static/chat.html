@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+		<!--聊天室-->
+		
+		<!--用户建立连接-->
+		<input type="text" name="username" /><button id="connBtn">建立连接</button>
+		<br>
+		<!--消息发送窗口：私发-->
+		<input type="text" name="info" /><button id="sendAll">群发</button>
+		<br />
+		<select id="userList">
+			<option value ="张三">张三</option>
+			<option value ="李四">李四</option>
+		</select>
+		<button id="sendTo">私发</button>
+		<!--消息记录窗口-->
+		<div class="msg">
+			<p>张三（群发）：你好，我们去爬山吧</p>
+			<p>李四（群发）：好的</p>
+		</div>
+	</body>
+	<script>
+		var webSocket = null;
+		//建立连接
+		$("#connBtn").on("click",function(){
+			var username = $("input[name='username']").val();//用户登录成功后的用户信息：session、localstorage
+			
+			if("WebSocket" in window){
+				webSocket = new WebSocket("ws://localhost:8088/chat/"+username);
+				
+				//webSocket通道就建立好了，等待服务器端的消息
+				webSocket.onmessage = function(evt){
+					var recived_msg = evt.data;
+					//根据后端给的消息来渲染前端界面：数据接口
+					var jsonMsg = JSON.parse(recived_msg);
+					if(jsonMsg!=null&&jsonMsg!=""){
+						var head = jsonMsg.head;
+						var data = jsonMsg.data;//约定好数据接口
+						switch(head){
+							case "sendAll":
+								sendAll(data);
+								break;
+							case "sendTo":
+								sendTo(data);
+								break;
+							case "userList":
+								userList(data);
+								break;
+							case "onLine":
+								onLine(data);
+								break;
+						}
+					}
+				}
+			}
+		})
+		
+		function sendTo(data){//msgInfo,fromUser
+			//解析data
+			var jsonData = data;
+			var msgInfo = jsonData.msgInfo;
+			var fromUser = jsonData.fromUser;
+			//渲染到div中
+			var info = fromUser+"(私发)："+msgInfo;
+			$(".msg").append("<p>"+info+"</p>");
+		}
+		function sendAll(data){
+			//解析data
+			var jsonData = data;
+			var msgInfo = jsonData.msgInfo;
+			var fromUser = jsonData.fromUser;
+			//渲染到div中
+			var info = fromUser+"(群发)："+msgInfo;
+			$(".msg").append("<p>"+info+"</p>");
+		}//data:{msgInfo,fromUser}
+		function userList(data){
+			//var jsonData = JSON.parse(data);
+			var option = null;
+			for(var i=0;i<data.length;i++){
+				var username = data[i];
+				option += "<option value='"+username+"'>"+username+"</option>"
+			}
+			$("#userList").empty();
+			$("#userList").append(option);
+		}//data:[]
+		function onLine(data){
+			var username = data;
+			//渲染到div中
+			var info = "系统群发："+username+"上线了";
+			$(".msg").append("<p>"+info+"</p>");
+		}//data:"张三"
+		
+		//群发消息
+		$("#sendAll").on("click",function(){
+			//1.获得消息，封装数据接口，发送
+			var msg = $("input[name='info']").val();
+			
+			var jsonMsg = {
+				"head":"sendAll",
+				"data":{
+					"msgInfo":msg
+				}
+			}
+			
+			webSocket.send(JSON.stringify(jsonMsg));
+		})
+		//私发消息
+		$("#sendTo").on("click",function(){
+			//1.获得消息和私发对象，封装数据接口，发送
+			var msg = $("input[name='info']").val();
+			var toUser = $("#userList").val();
+			
+			var jsonMsg = {
+				"head":"sendTo",
+				"data":{
+					"toUser":toUser,
+					"msgInfo":msg
+				}
+			}
+			
+			webSocket.send(JSON.stringify(jsonMsg));
+		})
+	</script>
+</html>
