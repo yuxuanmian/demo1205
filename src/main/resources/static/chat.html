@@ -5,7 +5,7 @@
 		<title></title>
 	</head>
 	<body>
-	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+	<script src="./js/jquery-1.9.1.min.js"></script>
 		<!--聊天室-->
 		
 		<!--用户建立连接-->
@@ -59,7 +59,24 @@
 					}
 				}
 			}
-		})
+		});
+
+		$(document).ready(function (){
+			$.ajax({
+				url: "/getUsername",
+				type: "get",
+				data: null,
+				dataType: "json",
+				success: function (json) {
+					$("input[name='username']").val(json.data.username);
+					alert(json.data.username);
+				},
+				error: function (xhr) {
+					console.log("获取用户名出错,"+xhr);
+				}
+			});
+
+		});
 		
 		function sendTo(data){//msgInfo,fromUser
 			//解析data

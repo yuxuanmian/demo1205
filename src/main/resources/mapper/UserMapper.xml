@@ -6,4 +6,8 @@
     <select id="findByUid" resultType="com.xhu.enity.Accont">
         select * from shixun.account where uid=#{uid}
     </select>
+
+    <select id="findUserByUid" resultType="com.xhu.enity.User">
+        select * from shixun.useraccount where uid=#{uid}
+    </select>
 </mapper>
